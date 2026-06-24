@@ -18,6 +18,12 @@ import { listCalendars } from './tools/calendar/list-calendars.js';
 import { listEvents } from './tools/calendar/list-events.js';
 import { createEvent } from './tools/calendar/create-event.js';
 import { getUserEmail } from './tools/user/get-email.js';
+import { listTaskLists } from './tools/tasks/list-task-lists.js';
+import { listTasks } from './tools/tasks/list-tasks.js';
+import { createTask } from './tools/tasks/create-task.js';
+import { completeTask } from './tools/tasks/complete-task.js';
+import { updateTask } from './tools/tasks/update-task.js';
+import { deleteTask } from './tools/tasks/delete-task.js';
 
 // Load environment variables
 config();
@@ -236,6 +242,136 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {},
         },
       },
+      {
+        name: 'tasks_list_task_lists',
+        description: 'List all Google Task lists',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            maxResults: {
+              type: 'number',
+              description: 'Maximum number of task lists to return (default: 100)',
+            },
+          },
+        },
+      },
+      {
+        name: 'tasks_list_tasks',
+        description: 'List tasks in a Google Tasks list',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            taskListId: {
+              type: 'string',
+              description: 'Task list ID (default: @default). Use tasks_list_task_lists to get IDs.',
+            },
+            maxResults: {
+              type: 'number',
+              description: 'Maximum number of tasks to return (default: 100)',
+            },
+            showCompleted: {
+              type: 'boolean',
+              description: 'Show completed tasks (default: true)',
+            },
+            showHidden: {
+              type: 'boolean',
+              description: 'Show hidden tasks (default: false)',
+            },
+          },
+        },
+      },
+      {
+        name: 'tasks_create_task',
+        description: 'Create a new task in Google Tasks',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            title: {
+              type: 'string',
+              description: 'Task title (required)',
+            },
+            notes: {
+              type: 'string',
+              description: 'Task notes/description (optional)',
+            },
+            due: {
+              type: 'string',
+              description: 'Due date in ISO 8601 format e.g. "2025-12-31" (optional)',
+            },
+            taskListId: {
+              type: 'string',
+              description: 'Task list ID (default: @default)',
+            },
+            parent: {
+              type: 'string',
+              description: 'Parent task ID - creates this as a subtask under the given task',
+            },
+          },
+          required: ['title'],
+        },
+      },
+      {
+        name: 'tasks_complete_task',
+        description: 'Mark a task as completed',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            taskId: {
+              type: 'string',
+              description: 'Task ID (required)',
+            },
+            taskListId: {
+              type: 'string',
+              description: 'Task list ID (default: @default)',
+            },
+          },
+          required: ['taskId'],
+        },
+      },
+      {
+        name: 'tasks_update_task',
+        description: 'Update an existing task (title, notes, due date, status)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            taskId: {
+              type: 'string',
+              description: 'Task ID (required)',
+            },
+            taskListId: {
+              type: 'string',
+              description: 'Task list ID (default: @default)',
+            },
+            title: { type: 'string', description: 'New title' },
+            notes: { type: 'string', description: 'New notes' },
+            due: { type: 'string', description: 'New due date in ISO 8601 format' },
+            status: {
+              type: 'string',
+              enum: ['needsAction', 'completed'],
+              description: 'Task status',
+            },
+          },
+          required: ['taskId'],
+        },
+      },
+      {
+        name: 'tasks_delete_task',
+        description: 'Delete a task permanently',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            taskId: {
+              type: 'string',
+              description: 'Task ID (required)',
+            },
+            taskListId: {
+              type: 'string',
+              description: 'Task list ID (default: @default)',
+            },
+          },
+          required: ['taskId'],
+        },
+      },
     ],
   };
 });
@@ -336,6 +472,48 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: JSON.stringify(result, null, 2),
             },
           ],
+        };
+      }
+
+      case 'tasks_list_task_lists': {
+        const result = await listTaskLists(googleApi, request.params.arguments as any);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+
+      case 'tasks_list_tasks': {
+        const result = await listTasks(googleApi, request.params.arguments as any);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+
+      case 'tasks_create_task': {
+        const result = await createTask(googleApi, request.params.arguments as any);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+
+      case 'tasks_complete_task': {
+        const result = await completeTask(googleApi, request.params.arguments as any);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+
+      case 'tasks_update_task': {
+        const result = await updateTask(googleApi, request.params.arguments as any);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+
+      case 'tasks_delete_task': {
+        const result = await deleteTask(googleApi, request.params.arguments as any);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };
       }
 

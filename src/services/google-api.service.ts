@@ -64,4 +64,12 @@ export class GoogleApiService {
     const auth = await this.getOAuth2Client();
     return google.drive({ version: 'v3', auth });
   }
+
+  /**
+   * Get Tasks API client
+   */
+  async getTasksClient() {
+    const auth = await this.getOAuth2Client();
+    return google.tasks({ version: 'v1', auth });
+  }
 }
